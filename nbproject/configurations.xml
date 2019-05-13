@@ -26,6 +26,7 @@
                    kind="IMPORTANT_FILES_FOLDER">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
+    <itemPath>install.bash</itemPath>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -42,6 +43,8 @@
         <archiverTool>
         </archiverTool>
       </compileType>
+      <item path="install.bash" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="log4c.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="log4c.h" ex="false" tool="3" flavor2="0">
@@ -69,6 +72,8 @@
         <archiverTool>
         </archiverTool>
       </compileType>
+      <item path="install.bash" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="log4c.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="log4c.h" ex="false" tool="3" flavor2="0">
