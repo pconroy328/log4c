@@ -12,7 +12,7 @@
 
 
 
-static int Logger_Log(char *format, char *level, ...);
+// static int Logger_Log (const char *file, const int line, const char *function, char *format, char *level, ...);
 static char *getCurrentDateTime(void);
 static char currentDateTimeBuffer[ 80 ];
 
@@ -54,7 +54,7 @@ void Logger_Terminate()
 }
 
 // ----------------------------------------------------------------------------
-void Logger_LogDebug_X (char *format, ...) 
+void Logger_LogDebug_X (const char *file, const int line, const char *function, char *format, ...) 
 {
     if (!logFileOpen || debugValue < 4)
         return;
@@ -71,7 +71,7 @@ void Logger_LogDebug_X (char *format, ...)
 }
 
 // ----------------------------------------------------------------------------
-void Logger_LogWarning_X (char *format, ...) 
+void Logger_LogWarning_X (const char *file, const int line, const char *function, char *format, ...) 
 {
     if (!logFileOpen || debugValue < 3)
         return;
@@ -87,7 +87,7 @@ void Logger_LogWarning_X (char *format, ...)
 }
 
 // ----------------------------------------------------------------------------
-void    Logger_LogError_X (char *format, ... )
+void    Logger_LogError_X (const char *file, const int line, const char *function, char *format, ... )
 {
     if (!logFileOpen || debugValue < 2)
         return;
@@ -103,7 +103,7 @@ void    Logger_LogError_X (char *format, ... )
 }
 
 // ----------------------------------------------------------------------------
-void    Logger_LogFatal_X (char *format, ... )
+void    Logger_LogFatal_X (const char *file, const int line, const char *function, char *format, ... )
 {
     if (!logFileOpen || debugValue < 1)
         return;
@@ -120,7 +120,7 @@ void    Logger_LogFatal_X (char *format, ... )
 }
 
 // ----------------------------------------------------------------------------
-void Logger_LogInfo_X (char *format, ...) {
+void Logger_LogInfo_X (const char *file, const int line, const char *function, char *format, ...) {
     if (!logFileOpen || debugValue < 5)
         return;
 
@@ -133,9 +133,9 @@ void Logger_LogInfo_X (char *format, ...) {
 
     fflush( fp );
 }
-
+/*
 // ----------------------------------------------------------------------------
-static int Logger_Log (char *level, char *format, ...) 
+static int Logger_Log (const char *file, const int line, const char *function, char *format, ...) 
 {
     if (!logFileOpen)
         return 0;
@@ -151,6 +151,7 @@ static int Logger_Log (char *level, char *format, ...)
 
     return numWritten;
 }
+ * */
 // ----------------------------------------------------------------------------
 static  char    *getCurrentDateTime()
 {
