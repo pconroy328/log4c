@@ -8,19 +8,30 @@
 #include <time.h>
 #include <sys/time.h>
 
+
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <pthread.h>
+
 #include "log4c.h"
 
 
 
-// static int Logger_Log (const char *file, const int line, const char *function, char *format, char *level, ...);
-static char *getCurrentDateTime(void);
-static char currentDateTimeBuffer[ 80 ];
+static  FILE    *fp;
+static  char    *currentFileName;
+static  int     logFileOpen = FALSE;
+static  int     debugValue;                     // from the INI file
+static  int     padCategory = TRUE;
+
+static  pthread_mutex_t     mutex   = PTHREAD_MUTEX_INITIALIZER;
+;
+
+//
+// Forward declarations
+static  char    *getCurrentDateTime( char *buffer, int buffLen );
 
 
-
-static FILE *fp;
-static int logFileOpen = FALSE;
-static int debugValue = 3;
 
 // ----------------------------------------------------------------------------
 //
@@ -33,168 +44,195 @@ static int debugValue = 3;
 // 1 = Log Fatal
 
 // ----------------------------------------------------------------------------
-void Logger_Initialize (char *fileName, int debugLevel) 
+void    Logger_Initialize (char *fileName, int debugLevel)
 {
-    printf( "ATTEMPTING TO OPEN [%s] DEBUG LEVEL [%d]\n", fileName, debugLevel );
-    fflush( stdout );
+    char    dateTimeBuffer[ 80 ];
     
-    if (fileName != (char *) 0) {
-        debugValue = debugLevel;
+    printf( "ATTEMPTING TO OPEN [%s] DEBUG LEVEL [%d]\n", fileName, debugLevel ); fflush( stdout );
+    debugValue = debugLevel;
+    currentFileName = fileName;
+  
+    //
+    // Remember UNIX filesystems often do not keep a "Creation Date" for a file.
+    // At best you'll have 'accessed (read)', 'modified (written to)', changed...
+    // 
+    // So we need to figure out a way to determine if the file we're about to open should be
+    // rolled before we open it.
+    //
+
+    
+    fprintf( stderr, "[%s] Logger_Initialize() called - Opening up the file.\n", getCurrentDateTime( dateTimeBuffer , sizeof dateTimeBuffer ) );
+    if (fileName != (char *) 0 ) {
         fp = fopen( fileName, "a" );
-        if ( fp != (FILE *) 0)
+        if (fp != (FILE *) 0) {
             logFileOpen = TRUE;
+        
+        }
     }
+    
+    if (logFileOpen)
+        fprintf( stderr, "[%s] Logger_Initialize() called - Log File is open.\n", getCurrentDateTime( dateTimeBuffer , sizeof dateTimeBuffer ) );  
 }
 
 // ----------------------------------------------------------------------------
-void Logger_Terminate() 
+void    Logger_UpdateDebugLevel (int newLevel)
+{
+    debugValue = newLevel;
+}
+
+
+// ----------------------------------------------------------------------------
+void    Logger_Terminate()
 {
     if (logFileOpen)
         fclose( fp );
+    pthread_mutex_destroy( &mutex );
 }
 
 // ----------------------------------------------------------------------------
-void Logger_LogDebug_X (const char *file, const int line, const char *function, char *format, ...) 
+void    Logger_LogDebug_X (const char *fname, const int lineNum, const char *func, char *format, ... )
 {
+    char    dateTimeBuffer[ 80 ];
+    
     if (!logFileOpen || debugValue < 4)
         return;
-
+    
+    pthread_mutex_lock( &mutex );
     va_list args;
-
-    va_start( args, format ); // the last fixed parameter
-    int numWritten = fprintf( fp, "DEBUG|%s|", getCurrentDateTime() );
-    numWritten += vfprintf( fp, format, args);
+    
+    va_start( args, format );                   // the last fixed parameter
+    int numWritten = fprintf( fp, "DEBUG  |%s|%s|%s:%d|", getCurrentDateTime( dateTimeBuffer , sizeof dateTimeBuffer ), fname, func, lineNum );
+    numWritten += vfprintf( fp, format, args );
     va_end( args );
-
+    
     fflush( fp );
-
+    pthread_mutex_unlock( &mutex );
 }
 
 // ----------------------------------------------------------------------------
-void Logger_LogWarning_X (const char *file, const int line, const char *function, char *format, ...) 
+void    Logger_LogWarning_X (const char *fname, const int lineNum, const char *func, char *format, ...)
 {
+    char    dateTimeBuffer[ 80 ];
+    
     if (!logFileOpen || debugValue < 3)
         return;
-
+    
+    pthread_mutex_lock( &mutex );
     va_list args;
-
-    va_start( args, format ); // the last fixed parameter
-    int numWritten = fprintf( fp, "WARNING|%s|", getCurrentDateTime() );
-    numWritten += vfprintf( fp, format, args);
+    
+    va_start( args, format );                   // the last fixed parameter
+    int numWritten = fprintf( fp, "WARNING|%s|%s|%s:%d|", getCurrentDateTime( dateTimeBuffer , sizeof dateTimeBuffer ), fname, func, lineNum );
+    numWritten += vfprintf( fp, format, args );
     va_end( args );
-
-    fflush( fp );
+    
+    fflush( fp );   
+    pthread_mutex_unlock( &mutex );
 }
 
 // ----------------------------------------------------------------------------
-void    Logger_LogError_X (const char *file, const int line, const char *function, char *format, ... )
+void    Logger_LogError_X (const char *fname, const int lineNum, const char *func, char *format, ...)
 {
+    char    dateTimeBuffer[ 80 ];
+    
     if (!logFileOpen || debugValue < 2)
         return;
     
+    pthread_mutex_lock( &mutex );
     va_list args;
     
     va_start( args, format );                   // the last fixed parameter
-    int numWritten = fprintf( fp, "ERROR|%s|", getCurrentDateTime() );
+    int numWritten = fprintf( fp, "ERROR  |%s|%s|%s:%d|", getCurrentDateTime( dateTimeBuffer , sizeof dateTimeBuffer ), fname, func, lineNum );
     numWritten += vfprintf( fp, format, args );
     va_end( args );
     
-    fflush( fp );
+    fflush( fp );   
+    pthread_mutex_unlock( &mutex );
 }
 
 // ----------------------------------------------------------------------------
-void    Logger_LogFatal_X (const char *file, const int line, const char *function, char *format, ... )
+void    Logger_LogFatal_X (const char *fname, const int lineNum, const char *func, char *format, ...)
 {
+    char    dateTimeBuffer[ 80 ];
+    
     if (!logFileOpen || debugValue < 1)
         return;
     
+    pthread_mutex_lock( &mutex );
     va_list args;
     
     va_start( args, format );                   // the last fixed parameter
-    int numWritten = fprintf( fp, "FATAL|%s|", getCurrentDateTime() );
+    int numWritten = fprintf( fp, "FATAL  |%s|%s|%s:%d|", getCurrentDateTime( dateTimeBuffer , sizeof dateTimeBuffer ), fname, func, lineNum );
     numWritten += vfprintf( fp, format, args );
     va_end( args );
     
     fflush( fp );
+    pthread_mutex_unlock( &mutex );
+    Logger_Terminate();
     exit( 1 );
 }
 
 // ----------------------------------------------------------------------------
-void Logger_LogInfo_X (const char *file, const int line, const char *function, char *format, ...) {
+void    Logger_LogInfo_X (const char *fname, const int lineNum, const char *func, char *format, ...)
+{
+    char    dateTimeBuffer[ 80 ];
+    
     if (!logFileOpen || debugValue < 5)
         return;
 
+    pthread_mutex_lock( &mutex );
     va_list args;
+    
+    va_start( args, format );                   // the last fixed parameter
+    int numWritten = fprintf( fp, "%-7s|%s|%s|%s:%d|", 
+            "INFO",
+            getCurrentDateTime( dateTimeBuffer , sizeof dateTimeBuffer ),
+            fname, func, lineNum);
 
-    va_start( args, format ); // the last fixed parameter
-    int numWritten = fprintf( fp, "INFO|%s|", getCurrentDateTime() );
-    numWritten += vfprintf( fp, format, args);
-    va_end( args );
 
-    fflush( fp );
-}
-/*
-// ----------------------------------------------------------------------------
-static int Logger_Log (const char *file, const int line, const char *function, char *format, ...) 
-{
-    if (!logFileOpen)
-        return 0;
-
-    va_list args;
-
-    va_start( args, format ); // the last fixed parameter
-
-    int numWritten = fprintf( fp, "%s|%s|", level, getCurrentDateTime() );
     numWritten += vfprintf( fp, format, args );
-
     va_end( args );
-
-    return numWritten;
+    
+    fflush( fp );
+    pthread_mutex_unlock( &mutex );
 }
- * */
-// ----------------------------------------------------------------------------
-static  char    *getCurrentDateTime()
+
+// -----------------------------------------------------------------------------
+static
+char    *getCurrentDateTime (char *buffer, int buffLen)
 {
     //
     // Something quick and dirty... Fix this later - thread safe
     time_t  current_time;
-    struct  tm      *tmPtr;
-    struct  timeval tv;
+    struct  tm  *tmPtr;
+ 
+    memset( buffer, '\0', buffLen );
     
-    memset( currentDateTimeBuffer, '\0', sizeof currentDateTimeBuffer );
-    
-    int milliSeconds = -1;
-    
-    if (gettimeofday( &tv, NULL ) == 0) {
-        milliSeconds = ((int) tv.tv_usec) / 1000;
-    }
-    
-    int len = 0;
     /* Obtain current time as seconds elapsed since the Epoch. */
     current_time = time( NULL );
-    
     if (current_time > 0) {
         /* Convert to local time format. */
         tmPtr = localtime( &current_time );
  
         if (tmPtr != NULL) {
-            len = strftime( currentDateTimeBuffer,
-                    sizeof currentDateTimeBuffer,
-                    "%F %T",
+            strftime( buffer,
+                    buffLen,
+                    "%F %T %z",
                     tmPtr );
             
         }
     }
     
-    //
-    //  strftime returns number of bytes put into the string
-    if (len > 0 && milliSeconds >= 0) {
-        currentDateTimeBuffer[ len ] = '.';
-        currentDateTimeBuffer[ len + 1 ] = (milliSeconds % 1000) / 100 + '0';
-        currentDateTimeBuffer[ len + 2 ] = ((milliSeconds % 100) / 10) + '0';
-        currentDateTimeBuffer[ len + 3 ] = (milliSeconds % 10) + '0';
-        currentDateTimeBuffer[ len + 4 ] = '\0';       
-    }
-    return &currentDateTimeBuffer[ 0 ];    
+    return buffer;
 }
 
+
+// ----------------------------------------------------------------------------
+static
+void    Logger_LogIt (const char *fname, const int lineNum, const char *func, const char *level, char *format, ...)
+{
+    char    dateTimeBuffer[ 80 ];
+    
+    if (!logFileOpen || debugValue < 5)
+        return;
+    
+}
