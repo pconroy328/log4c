@@ -20,7 +20,30 @@ extern "C" {
 #define FALSE 0
 #define TRUE  (!FALSE)
 #endif
+// ----------------------------------------------------------------------------
+//
+// How "debugValue" works.  It's an integer
+// 0 = Log nothing         
+// 5 = Log Fatal and Error and Warning and Debug and Info
+// 4 = Log Fatal and Error and Warning and Debug
+// 3 = Log Fatal and Error and Warning
+// 2 = Log Fatal and Error
+// 1 = Log Fatal
+    
+#define LOG_FATAL                               1
+#define LOG_FATAL_ERROR                         2
+#define LOG_FATAL_ERROR_WARNING                 3
+#define LOG_FATAL_ERROR_WARNING_DEBUG           4
+#define LOG_FATAL_ERROR_WARNING_DEBUG_INFO      5
+#define LOG_NOTHING                             0
 
+#define LOG_ERROR                               LOG_FATAL_ERROR
+#define LOG_WARNING                             LOG_FATAL_ERROR_WARNING
+#define LOG_DEBUG                               LOG_FATAL_ERROR_WARNING_DEBUG
+#define LOG_INFO                                LOG_FATAL_ERROR_WARNING_DEBUG_INFO
+    
+    
+    
 
     extern void Logger_Initialize(char *fileName, int debugValue);
     extern void Logger_Terminate();
