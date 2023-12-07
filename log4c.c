@@ -164,8 +164,10 @@ void    Logger_LogFatal_X (const char *fname, const int lineNum, const char *fun
     int numWritten = fprintf( fp, "FATAL  |%s|%s|%s:%d|", getCurrentDateTime( dateTimeBuffer , sizeof dateTimeBuffer ), fname, func, lineNum );
     numWritten += vfprintf( fp, format, args );
     va_end( args );
-    
+
+    fprintf( fp, "FATAL  |%s|%s|%s:%d|PROGRAM TERMINATION", getCurrentDateTime( dateTimeBuffer , sizeof dateTimeBuffer ), fname, func, lineNum );
     fflush( fp );
+    
     pthread_mutex_unlock( &mutex );
     Logger_Terminate();
     exit( 1 );
