@@ -16,6 +16,7 @@
 
 #include "log4c.h"
 
+// 19Feb2024    expose update log level call
 
 
 static  FILE    *fp;

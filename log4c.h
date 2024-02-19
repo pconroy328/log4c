@@ -53,6 +53,7 @@ extern "C" {
     extern void Logger_LogError_X(const char *fname, const int lineNum, const char *func, char *format, ...);
     extern void Logger_LogFatal_X(const char *fname, const int lineNum, const char *func, char *format, ...);
 
+    extern void Logger_UpdateDebugLevel( const int newLevel );
 
 #define Logger_FunctionStart(x)     Logger_LogDebug( "%s[%d] :: %s() - enter\n", __FILE__, __LINE__, __func__)
 #define Logger_FunctionEnd(x)       Logger_LogDebug( "%s[%d] :: %s() - exit\n", __FILE__, __LINE__, __func__ )
