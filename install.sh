@@ -7,4 +7,4 @@
 make
 sudo cp ./dist/Debug/GNU-Linux/*.a /usr/local/lib
 sudo cp ./log4c.h /usr/local/include
-sudo ldconfig -v
+sudo ldconfig
